@@ -10,10 +10,11 @@ class BackendError(RuntimeError):
 
 
 class LLMBackend(ABC):
-    """Contract for local LLM inference backends (implemented in Phase 3)."""
+    """Contract for local LLM inference backends."""
 
     model: str
     base_url: str
+    timeout: float
 
     @abstractmethod
     def health_check(self) -> None:
@@ -22,4 +23,3 @@ class LLMBackend(ABC):
     @abstractmethod
     def review(self, prompt: str, *, system_prompt: str | None = None) -> str:
         """Send a review prompt to the model and return the raw text response."""
-
