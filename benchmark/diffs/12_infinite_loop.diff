@@ -1,0 +1,17 @@
+diff --git a/src/retry.py b/src/retry.py
+new file mode 100644
+--- /dev/null
++++ b/src/retry.py
+@@ -0,0 +1,12 @@
++from collections.abc import Callable
++
++
++def run_with_retries(operation: Callable[[], str], max_retries: int = 3) -> str:
++    attempt = 0
++    while attempt < max_retries:
++        try:
++            return operation()
++        except TimeoutError:
++            continue
++        attempt += 1
++    raise RuntimeError("Operation failed after retries")

@@ -1,0 +1,11 @@
+diff --git a/src/client.py b/src/client.py
+new file mode 100644
+--- /dev/null
++++ b/src/client.py
+@@ -0,0 +1,6 @@
++import httpx
++
++
++def notify_webhook(url: str, payload: dict[str, object]) -> int:
++    response = httpx.post(url, json=payload, timeout=None)
++    return response.status_code

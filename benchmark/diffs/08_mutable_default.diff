@@ -1,0 +1,10 @@
+diff --git a/src/tags.py b/src/tags.py
+new file mode 100644
+--- /dev/null
++++ b/src/tags.py
+@@ -0,0 +1,5 @@
++def attach_tag(tag: str, existing: list[str] = []) -> list[str]:
++    clean = tag.strip().lower()
++    if clean and clean not in existing:
++        existing.append(clean)
++    return existing

@@ -1,0 +1,11 @@
+diff --git a/src/media.py b/src/media.py
+new file mode 100644
+--- /dev/null
++++ b/src/media.py
+@@ -0,0 +1,6 @@
++import subprocess
++
++
++def transcode_video(user_input_path: str, output_path: str) -> None:
++    cmd = f"ffmpeg -y -i {user_input_path} {output_path}"
++    subprocess.run(cmd, shell=True, check=True)

@@ -1,0 +1,185 @@
+[
+  {
+    "id": "01_sql_injection",
+    "category": "SQL injection",
+    "diff_file": "diffs/01_sql_injection.diff",
+    "base_dir": "base/01",
+    "target_file": "src/db.py",
+    "line_range": [10, 13],
+    "expected_severity": "security",
+    "keyword_groups": [
+      ["sql", "query"],
+      ["inject", "parameter", "interpolat", "format", "placeholder", "escap", "prepared"]
+    ]
+  },
+  {
+    "id": "02_hardcoded_secret",
+    "category": "Hardcoded secret",
+    "diff_file": "diffs/02_hardcoded_secret.diff",
+    "base_dir": null,
+    "target_file": "src/auth.py",
+    "line_range": [1, 6],
+    "expected_severity": "security",
+    "keyword_groups": [
+      ["secret", "key", "credential", "token", "api_signing_secret"],
+      ["hardcod", "hard-cod", "env", "environment", "vault", "expos", "commit", "leak", "source"]
+    ]
+  },
+  {
+    "id": "03_off_by_one",
+    "category": "Off-by-one error",
+    "diff_file": "diffs/03_off_by_one.diff",
+    "base_dir": "base/03",
+    "target_file": "src/pagination.py",
+    "line_range": [8, 13],
+    "expected_severity": "bug",
+    "keyword_groups": [
+      ["indexerror", "out of range", "out-of-bounds", "out of bounds", "off-by-one", "off by one", "last element", "exceed"],
+      ["range", "len(items)", "i + 1", "index", "bound"]
+    ]
+  },
+  {
+    "id": "04_unhandled_exception",
+    "category": "Unhandled exception",
+    "diff_file": "diffs/04_unhandled_exception.diff",
+    "base_dir": null,
+    "target_file": "src/webhook.py",
+    "line_range": [4, 8],
+    "expected_severity": "bug",
+    "keyword_groups": [
+      ["json", "keyerror", "valueerror", "exception", "error", "missing", "invalid", "malform", "decode"],
+      ["try", "except", "handl", "catch", "validat", "get(", "raise", "crash"]
+    ]
+  },
+  {
+    "id": "05_command_injection",
+    "category": "Command injection",
+    "diff_file": "diffs/05_command_injection.diff",
+    "base_dir": null,
+    "target_file": "src/media.py",
+    "line_range": [4, 6],
+    "expected_severity": "security",
+    "keyword_groups": [
+      ["command", "shell", "subprocess"],
+      ["inject", "shell=true", "shell=false", "list", "sanitiz", "escap", "shlex", "argument"]
+    ]
+  },
+  {
+    "id": "06_path_traversal",
+    "category": "Path traversal",
+    "diff_file": "diffs/06_path_traversal.diff",
+    "base_dir": null,
+    "target_file": "src/files.py",
+    "line_range": [6, 8],
+    "expected_severity": "security",
+    "keyword_groups": [
+      ["path", "traversal", "directory", "arbitrary file", "../"],
+      ["resolve", "sanitiz", "validat", "escap", "outside", "traversal", "relative_to", "basename", "restrict"]
+    ]
+  },
+  {
+    "id": "07_resource_leak",
+    "category": "Resource leak",
+    "diff_file": "diffs/07_resource_leak.diff",
+    "base_dir": "base/07",
+    "target_file": "src/exporter.py",
+    "line_range": [8, 15],
+    "expected_severity": "bug",
+    "keyword_groups": [
+      ["file", "handle", "resource", "descriptor", "open", "leak"],
+      ["close", "with", "context manager", "leak", "unclosed"]
+    ]
+  },
+  {
+    "id": "08_mutable_default",
+    "category": "Mutable default argument",
+    "diff_file": "diffs/08_mutable_default.diff",
+    "base_dir": null,
+    "target_file": "src/tags.py",
+    "line_range": [1, 5],
+    "expected_severity": "bug",
+    "keyword_groups": [
+      ["mutable", "default", "list", "[]"],
+      ["shared", "none", "call", "mutat", "persist", "across"]
+    ]
+  },
+  {
+    "id": "09_null_dereference",
+    "category": "Null dereference",
+    "diff_file": "diffs/09_null_dereference.diff",
+    "base_dir": "base/09",
+    "target_file": "src/profile.ts",
+    "line_range": [13, 16],
+    "expected_severity": "bug",
+    "keyword_groups": [
+      ["null", "undefined", "nullable"],
+      ["check", "derefer", "typeerror", "guard", "?.", "throw", "if (!user)", "if (user", "property", "access"]
+    ]
+  },
+  {
+    "id": "10_dom_xss",
+    "category": "DOM XSS",
+    "diff_file": "diffs/10_dom_xss.diff",
+    "base_dir": null,
+    "target_file": "src/banner.js",
+    "line_range": [3, 5],
+    "expected_severity": "security",
+    "keyword_groups": [
+      ["xss", "cross-site", "innerhtml", "script", "html injection"],
+      ["textcontent", "sanitiz", "escap", "innertext", "untrusted", "user"]
+    ]
+  },
+  {
+    "id": "11_toctou_race",
+    "category": "Race condition (TOCTOU)",
+    "diff_file": "diffs/11_toctou_race.diff",
+    "base_dir": "base/11",
+    "target_file": "src/ledger.py",
+    "line_range": [10, 16],
+    "expected_severity": "bug",
+    "keyword_groups": [
+      ["race", "concurr", "toctou", "atomic", "lock", "double-spend", "simultaneous"],
+      ["await", "lock", "atomic", "concurr", "race", "stale", "async"]
+    ]
+  },
+  {
+    "id": "12_infinite_loop",
+    "category": "Infinite loop / unreachable code",
+    "diff_file": "diffs/12_infinite_loop.diff",
+    "base_dir": null,
+    "target_file": "src/retry.py",
+    "line_range": [5, 12],
+    "expected_severity": "bug",
+    "keyword_groups": [
+      ["infinite", "never", "unreach", "dead code", "skipped", "forever", "stuck", "endless"],
+      ["attempt", "increment", "continue", "loop", "finally"]
+    ]
+  },
+  {
+    "id": "13_weak_password_hash",
+    "category": "Weak password hashing",
+    "diff_file": "diffs/13_weak_password_hash.diff",
+    "base_dir": null,
+    "target_file": "src/passwords.py",
+    "line_range": [4, 9],
+    "expected_severity": "security",
+    "keyword_groups": [
+      ["md5", "hash", "weak", "insecure", "deprecated", "crypt"],
+      ["salt", "bcrypt", "argon2", "pbkdf2", "scrypt", "brute", "rainbow", "collision", "password"]
+    ]
+  },
+  {
+    "id": "14_missing_timeout",
+    "category": "Missing HTTP timeout",
+    "diff_file": "diffs/14_missing_timeout.diff",
+    "base_dir": null,
+    "target_file": "src/client.py",
+    "line_range": [4, 6],
+    "expected_severity": "bug",
+    "keyword_groups": [
+      ["timeout", "hang", "block", "indefinite"],
+      ["timeout", "none", "second", "limit", "hang", "wait"]
+    ]
+  }
+]
+

@@ -1,0 +1,17 @@
+diff --git a/src/exporter.py b/src/exporter.py
+--- a/src/exporter.py
++++ b/src/exporter.py
+@@ -3,3 +3,13 @@ from pathlib import Path
+ 
+ def format_csv_row(values: list[str]) -> str:
+     return ",".join(values)
++
++
++def write_rows(output_path: Path, rows: list[list[str]]) -> bool:
++    handle = open(output_path, "w", encoding="utf-8")
++    for row in rows:
++        if not row:
++            return False
++        handle.write(format_csv_row(row) + "\n")
++    handle.close()
++    return True

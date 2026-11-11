@@ -1,0 +1,13 @@
+diff --git a/src/db.py b/src/db.py
+--- a/src/db.py
++++ b/src/db.py
+@@ -5,3 +5,9 @@ def get_user_by_id(conn: sqlite3.Connection, user_id: int) -> tuple[object, ...]
+     cursor = conn.cursor()
+     cursor.execute("SELECT id, email FROM users WHERE id = ?", (user_id,))
+     return cursor.fetchone()
++
++
++def get_user_by_email(conn: sqlite3.Connection, email: str) -> tuple[object, ...] | None:
++    cursor = conn.cursor()
++    cursor.execute(f"SELECT id, email FROM users WHERE email = '{email}'")
++    return cursor.fetchone()

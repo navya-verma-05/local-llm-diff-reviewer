@@ -1,0 +1,17 @@
+diff --git a/src/ledger.py b/src/ledger.py
+--- a/src/ledger.py
++++ b/src/ledger.py
+@@ -4,4 +4,13 @@ from dataclasses import dataclass
+ @dataclass
+ class Account:
+     id: str
+     balance: int
++
++
++async def withdraw(account: Account, amount: int, persist_fn) -> bool:
++    if amount <= 0 or account.balance < amount:
++        return False
++    new_balance = account.balance - amount
++    await persist_fn(account.id, new_balance)
++    account.balance = new_balance
++    return True

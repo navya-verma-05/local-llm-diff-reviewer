@@ -1,0 +1,12 @@
+diff --git a/src/profile.ts b/src/profile.ts
+--- a/src/profile.ts
++++ b/src/profile.ts
+@@ -9,3 +9,8 @@ export async function findUser(id: string): Promise<User | null> {
+   }
+   return { id, email: "user@example.com" };
+ }
++
++export async function getNormalizedEmail(id: string): Promise<string> {
++  const user = await findUser(id);
++  return user.email.trim().toLowerCase();
++}

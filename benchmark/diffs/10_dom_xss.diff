@@ -1,0 +1,10 @@
+diff --git a/src/banner.js b/src/banner.js
+new file mode 100644
+--- /dev/null
++++ b/src/banner.js
+@@ -0,0 +1,5 @@
++export function renderWelcomeBanner(bannerElement, queryString) {
++  const params = new URLSearchParams(queryString);
++  const name = params.get("name") || "Guest";
++  bannerElement.innerHTML = "Welcome, " + name;
++}

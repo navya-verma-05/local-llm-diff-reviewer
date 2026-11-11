@@ -1,0 +1,13 @@
+diff --git a/src/webhook.py b/src/webhook.py
+new file mode 100644
+--- /dev/null
++++ b/src/webhook.py
+@@ -0,0 +1,8 @@
++import json
++
++
++def parse_webhook_event(raw_body: str) -> tuple[str, int]:
++    data = json.loads(raw_body)
++    event_id = str(data["event_id"])
++    attempts = int(data["attempts"])
++    return event_id, attempts
