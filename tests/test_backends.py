@@ -149,3 +149,71 @@ def test_create_backend_factory() -> None:
 
     llama_cfg = DiffwiseConfig(backend="llamacpp", model="local-model")
     assert isinstance(create_backend(llama_cfg), LlamaCppBackend)
+
+
+def test_ollama_and_llamacpp_stream_error_edge_cases() -> None:
+    def ollama_bad_json(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, content=b"{not json\n")
+
+    with pytest.raises(BackendError, match="malformed JSON chunk"):
+        OllamaBackend(
+            client=httpx.Client(transport=httpx.MockTransport(ollama_bad_json))
+        ).review("diff")
+
+    def ollama_timeout(request: httpx.Request) -> httpx.Response:
+        raise httpx.ReadTimeout("timeout", request=request)
+
+    with pytest.raises(BackendError, match="timed out"):
+        OllamaBackend(
+            client=httpx.Client(transport=httpx.MockTransport(ollama_timeout))
+        ).review("diff")
+
+    def llama_sse_edge(request: httpx.Request) -> httpx.Response:
+        sse = "\n".join(
+            [
+                ": keepalive comment",
+                'data: {"choices": [{"delta": {"content": "ok"}}]}',
+                "data: [DONE]",
+            ]
+        )
+        return httpx.Response(
+            200,
+            headers={"content-type": "text/event-stream"},
+            content=sse.encode("utf-8"),
+        )
+
+    assert (
+        LlamaCppBackend(
+            client=httpx.Client(transport=httpx.MockTransport(llama_sse_edge))
+        ).review("diff")
+        == "ok"
+    )
+
+    def llama_err_stream(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            headers={"content-type": "text/event-stream"},
+            content=b'data: {"error": {"message": "context exceeded"}}\n',
+        )
+
+    with pytest.raises(BackendError, match="context exceeded"):
+        LlamaCppBackend(
+            client=httpx.Client(transport=httpx.MockTransport(llama_err_stream))
+        ).review("diff")
+
+    def llama_http_500(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(500, text="boom")
+
+    with pytest.raises(BackendError, match="HTTP 500"):
+        LlamaCppBackend(
+            client=httpx.Client(transport=httpx.MockTransport(llama_http_500))
+        ).review("diff")
+
+    def llama_timeout(request: httpx.Request) -> httpx.Response:
+        raise httpx.ReadTimeout("timeout", request=request)
+
+    with pytest.raises(BackendError, match="timed out"):
+        LlamaCppBackend(
+            client=httpx.Client(transport=httpx.MockTransport(llama_timeout))
+        ).review("diff")
+

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from io import StringIO
+from pathlib import Path
 
 from rich.console import Console
 
@@ -11,6 +12,7 @@ from diffwise.git_diff import DiffCollection, DiffHunk, DiffLine, FileDiff, Skip
 from diffwise.prompts import FallbackNote, Finding
 from diffwise.report import (
     ReviewReport,
+    emit_report,
     format_json_report,
     format_markdown_report,
     normalize_findings,
@@ -132,4 +134,33 @@ def test_markdown_and_json_reports() -> None:
     assert parsed["summary"]["blocked"] is True
     assert parsed["findings"][0]["file"] == "src/auth.py"
     assert parsed["skipped_files"][0]["path"] == "uv.lock"
+
+
+def test_emit_report_writes_terminal_and_markdown_files(tmp_path: Path) -> None:
+    report = _sample_report()
+    stdout_console = Console(file=StringIO(), no_color=True)
+    stderr_console = Console(file=StringIO(), no_color=True)
+
+    txt_out = tmp_path / "out" / "review.txt"
+    emit_report(
+        report,
+        output_format="terminal",
+        output_path=txt_out,
+        stdout_console=stdout_console,
+        stderr_console=stderr_console,
+    )
+    assert "Hardcoded secret token" in txt_out.read_text(encoding="utf-8")
+
+    md_out = tmp_path / "out" / "review.md"
+    emit_report(
+        report,
+        output_format="markdown",
+        output_path=md_out,
+        stdout_console=stdout_console,
+        stderr_console=stderr_console,
+    )
+    md_text = md_out.read_text(encoding="utf-8")
+    assert "## Plain-Text Fallback Notes" in md_text
+    assert "Extra note" in md_text
+
 

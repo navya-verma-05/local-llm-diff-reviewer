@@ -131,3 +131,31 @@ def test_review_chunk_falls_back_to_plain_text_after_retry_failure() -> None:
     assert result.fallback_note.file == "db.py"
     assert "unparameterized SQL" in result.fallback_note.text
     assert len(backend.prompts) == 2
+
+
+def test_parse_findings_json_validation_and_review_chunks_callback() -> None:
+    from diffwise.prompts import review_chunks
+
+    single = '{"title": "Null check", "severity": "warning", "explanation": "May be None"}'
+    parsed = parse_findings_json(single, default_file="svc.py")
+    assert len(parsed) == 1
+    assert parsed[0].severity == "bug"
+
+    with pytest.raises(FindingParseError):
+        parse_findings_json('[{"severity": "bug", "title": ""}]')
+    with pytest.raises(FindingParseError):
+        parse_findings_json('[{"severity": "bogus", "title": "t", "explanation": "e"}]')
+    with pytest.raises(FindingParseError):
+        parse_findings_json("   ")
+
+    seen_progress: list[tuple[int, int, str]] = []
+    backend = _StubBackend(["[]"])
+    findings, notes = review_chunks(
+        backend,
+        [_sample_chunk()],
+        on_chunk_start=lambda idx, total, ch: seen_progress.append((idx, total, ch.file_path)),
+    )
+    assert findings == []
+    assert notes == []
+    assert seen_progress == [(1, 1, "db.py")]
+

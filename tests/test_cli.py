@@ -208,3 +208,46 @@ def test_pre_commit_hooks_yaml_present() -> None:
     assert "entry: diffwise" in content
     assert "pass_filenames: false" in content
 
+
+def test_cli_only_lockfile_staged_skips_llm_and_exits_zero(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repo = _init_repo(tmp_path)
+    (tmp_path / "poetry.lock").write_text("[[package]]\n", encoding="utf-8")
+    repo.index.add(["poetry.lock"])
+
+    def fail_if_called(cfg: DiffwiseConfig) -> LLMBackend:
+        raise AssertionError("Backend should not be created when no reviewable chunks exist")
+
+    monkeypatch.setattr("diffwise.cli.create_backend", fail_if_called)
+
+    result = runner.invoke(app, ["--repo", str(tmp_path), "--format", "json"])
+    assert result.exit_code == 0
+    data = json.loads(result.stdout)
+    assert data["files_reviewed"] == 0
+    assert data["files_skipped"] == 1
+
+
+def test_cli_explicit_config_and_markdown_stdout(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repo = _init_repo(tmp_path)
+    custom_cfg = tmp_path / "custom.toml"
+    custom_cfg.write_text('model = "custom-coder"\n', encoding="utf-8")
+    (tmp_path / "app.py").write_text("def ok():\n    return 1\n", encoding="utf-8")
+    repo.index.add(["app.py"])
+
+    monkeypatch.setattr(
+        "diffwise.cli.create_backend",
+        lambda cfg: _FakeCliBackend("[]", cfg=cfg),
+    )
+
+    result = runner.invoke(
+        app,
+        ["--repo", str(tmp_path), "--config", str(custom_cfg), "--format", "markdown"],
+    )
+    assert result.exit_code == 0
+    assert "# diffwise Code Review" in result.stdout
+    assert "`custom-coder`" in result.stdout
+
+

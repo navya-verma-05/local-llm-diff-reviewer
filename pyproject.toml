@@ -6,11 +6,11 @@ build-backend = "hatchling.build"
 name = "diffwise"
 version = "0.1.0"
 description = "Local, private, zero-cost AI code review for staged Git diffs before commit."
-readme = "README.md"
+readme = { file = "README.md", content-type = "text/markdown" }
 license = { file = "LICENSE" }
 requires-python = ">=3.10"
 authors = [
-  { name = "diffwise contributors" },
+  { name = "Navya Verma", email = "navyaverma20005@gmail.com" },
 ]
 keywords = ["git", "code-review", "llm", "ollama", "llamacpp", "cli", "pre-commit"]
 classifiers = [
@@ -23,6 +23,7 @@ classifiers = [
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
+  "Topic :: Security",
   "Topic :: Software Development :: Quality Assurance",
   "Topic :: Software Development :: Version Control :: Git",
   "Typing :: Typed",

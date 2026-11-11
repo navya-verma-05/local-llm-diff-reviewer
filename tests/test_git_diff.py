@@ -309,3 +309,47 @@ def test_load_config_from_toml(tmp_path: Path) -> None:
     with pytest.raises(ConfigError):
         load_config(start_dir=tmp_path)
 
+
+def test_quoted_paths_copy_binary_patch_and_commit_ranges(git_repo: Repo) -> None:
+    raw = (
+        'diff --git "a/dir name/my file.py" "b/dir name/my file.py"\n'
+        '--- "a/dir name/my file.py"\n'
+        '+++ "b/dir name/my file.py"\n'
+        "@@ -1 +1 @@\n"
+        "-old\n"
+        "+new\n"
+        "diff --git a/bin.dat b/bin.dat\n"
+        "GIT binary patch\n"
+        "literal 2\n"
+        "Jc${@?\n"
+        "diff --git a/src.py b/dst.py\n"
+        "similarity index 100%\n"
+        "copy from src.py\n"
+        "copy to dst.py\n"
+    )
+    parsed = parse_unified_diff(raw)
+    assert len(parsed) == 3
+    assert parsed[0].path == "dir name/my file.py"
+    assert parsed[0].added_lines == [(1, "new")]
+    assert "File: dir name/my file.py" in parsed[0].to_patch()
+    assert parsed[1].is_binary is True
+    assert parsed[2].status == "copied"
+    assert parsed[2].old_path == "src.py"
+    assert parsed[2].path == "dst.py"
+
+    # Test commit ranges a..b and invalid range
+    _write_and_stage(git_repo, "m.py", "v = 1\n")
+    c1 = git_repo.index.commit("c1")
+    _write_and_stage(git_repo, "m.py", "v = 2\n")
+    c2 = git_repo.index.commit("c2")
+
+    assert git_repo.working_tree_dir is not None
+    repo_root = Path(git_repo.working_tree_dir)
+    range_diff = get_commit_diff(f"{c1.hexsha}..{c2.hexsha}", repo_root)
+    assert len(range_diff.files) == 1
+    assert range_diff.files[0].added_lines == [(1, "v = 2")]
+
+    with pytest.raises(GitDiffError):
+        get_commit_diff("a..b..c", repo_root)
+
+
