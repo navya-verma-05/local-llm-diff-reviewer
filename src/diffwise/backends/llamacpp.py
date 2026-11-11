@@ -7,7 +7,7 @@ from typing import Any
 
 import httpx
 
-from diffwise.backends.base import BackendError, LLMBackend
+from diffwise.backends.base import BackendError, LLMBackend, format_http_error_detail
 from diffwise.config import DEFAULT_LLAMACPP_URL, DEFAULT_MODEL, DEFAULT_TIMEOUT_SECONDS
 
 
@@ -91,8 +91,7 @@ class LlamaCppBackend(LLMBackend):
                 timeout=self.timeout,
             ) as response:
                 if response.status_code >= 400:
-                    err_body = response.read().decode("utf-8", errors="replace").strip()
-                    detail = f": {err_body}" if err_body else ""
+                    detail = format_http_error_detail(response.read())
                     raise BackendError(
                         "llama.cpp /v1/chat/completions failed with "
                         f"HTTP {response.status_code}{detail}"

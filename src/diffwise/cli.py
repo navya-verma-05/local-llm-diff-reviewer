@@ -8,6 +8,7 @@ from typing import Annotated
 
 import typer
 from rich.console import Console
+from rich.markup import escape
 
 from diffwise import __version__
 from diffwise.backends import BackendError, create_backend
@@ -81,9 +82,11 @@ def init_command(
     try:
         dest = write_starter_config(target_dir=path, force=force)
     except ConfigError as exc:
-        console.print(f"[bold red]Error:[/bold red] {exc}")
+        console.print(f"[bold red]Error:[/bold red] {escape(str(exc))}")
         raise typer.Exit(code=1) from exc
-    console.print(f"[bold green]Created[/bold green] starter config at [cyan]{dest}[/cyan]")
+    console.print(
+        f"[bold green]Created[/bold green] starter config at [cyan]{escape(str(dest))}[/cyan]"
+    )
 
 
 @app.callback(invoke_without_command=True)
@@ -156,12 +159,18 @@ def main(
     try:
         cfg = load_config(start_dir=start_dir, config_path=config_path)
     except ConfigError as exc:
-        stderr_console.print(f"[bold red]Configuration error:[/bold red] {exc}")
+        stderr_console.print(f"[bold red]Configuration error:[/bold red] {escape(str(exc))}")
         raise typer.Exit(code=2) from exc
 
     # CLI flags override .diffwise.toml values
     if model is not None:
-        cfg.model = model
+        cleaned_model = model.strip()
+        if not cleaned_model:
+            stderr_console.print(
+                "[bold red]Usage error:[/bold red] `--model` must be a non-empty model name."
+            )
+            raise typer.Exit(code=2)
+        cfg.model = cleaned_model
     if backend is not None:
         cfg.backend = backend.value
     if fail_on is not None:
@@ -183,7 +192,7 @@ def main(
                 ignore_globs=cfg.ignore_globs,
             )
     except GitDiffError as exc:
-        stderr_console.print(f"[bold red]Git error:[/bold red] {exc}")
+        stderr_console.print(f"[bold red]Git error:[/bold red] {escape(str(exc))}")
         raise typer.Exit(code=2) from exc
 
     fmt: OutputFormat = output_format.value
@@ -229,15 +238,15 @@ def main(
     llm = create_backend(cfg)
     try:
         with stderr_console.status(
-            f"[cyan]Checking {cfg.backend} backend ({cfg.model})...[/cyan]",
+            f"[cyan]Checking {escape(cfg.backend)} backend ({escape(cfg.model)})...[/cyan]",
             spinner="dots",
         ) as status:
             llm.health_check()
 
             def _update_spinner(index: int, total: int, chunk: DiffChunk) -> None:
                 status.update(
-                    f"[cyan]Reviewing {chunk.file_path} ({index}/{total}) "
-                    f"with {cfg.model}...[/cyan]"
+                    f"[cyan]Reviewing {escape(chunk.file_path)} ({index}/{total}) "
+                    f"with {escape(cfg.model)}...[/cyan]"
                 )
 
             raw_findings, fallback_notes = review_chunks(
@@ -247,7 +256,7 @@ def main(
                 on_chunk_start=_update_spinner,
             )
     except BackendError as exc:
-        stderr_console.print(f"[bold red]Backend error:[/bold red] {exc}")
+        stderr_console.print(f"[bold red]Backend error:[/bold red] {escape(str(exc))}")
         raise typer.Exit(code=2) from exc
 
     findings = normalize_findings(raw_findings, collection)

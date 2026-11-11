@@ -217,3 +217,29 @@ def test_ollama_and_llamacpp_stream_error_edge_cases() -> None:
             client=httpx.Client(transport=httpx.MockTransport(llama_timeout))
         ).review("diff")
 
+
+def test_http_error_detail_is_bounded() -> None:
+    huge_body = "X" * 1200
+
+    def ollama_huge_500(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(500, text=huge_body)
+
+    with pytest.raises(BackendError) as ollama_exc:
+        OllamaBackend(
+            client=httpx.Client(transport=httpx.MockTransport(ollama_huge_500))
+        ).review("diff")
+    msg = str(ollama_exc.value)
+    assert msg.endswith("...")
+    assert len(msg) < 600
+
+    def llama_huge_500(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(500, text=huge_body)
+
+    with pytest.raises(BackendError) as llama_exc:
+        LlamaCppBackend(
+            client=httpx.Client(transport=httpx.MockTransport(llama_huge_500))
+        ).review("diff")
+    msg2 = str(llama_exc.value)
+    assert msg2.endswith("...")
+    assert len(msg2) < 600
+

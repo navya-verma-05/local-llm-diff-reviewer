@@ -251,3 +251,37 @@ def test_cli_explicit_config_and_markdown_stdout(
     assert "`custom-coder`" in result.stdout
 
 
+def test_cli_rejects_blank_model_and_escapes_bracket_filenames(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repo = _init_repo(tmp_path)
+    dynamic_dir = tmp_path / "app" / "users" / "[id]"
+    dynamic_dir.mkdir(parents=True)
+    (dynamic_dir / "page.tsx").write_text("export const x = 1;\n", encoding="utf-8")
+    repo.index.add(["app/users/[id]/page.tsx"])
+
+    blank_result = runner.invoke(app, ["--repo", str(tmp_path), "--model", "   "])
+    assert blank_result.exit_code == 2
+    assert "non-empty model name" in blank_result.output
+
+    finding_json = json.dumps(
+        [
+            {
+                "file": "app/users/[id]/page.tsx",
+                "line": 1,
+                "severity": "suggestion",
+                "title": "Add explicit return type",
+                "explanation": "Helpful for TS exports.",
+                "suggested_fix": "Annotate type.",
+            }
+        ]
+    )
+    monkeypatch.setattr(
+        "diffwise.cli.create_backend",
+        lambda cfg: _FakeCliBackend(finding_json, cfg=cfg),
+    )
+    result = runner.invoke(app, ["--repo", str(tmp_path), "--format", "terminal"])
+    assert result.exit_code == 0
+    assert "app/users/[id]/page.tsx" in result.stdout
+
+

@@ -6,6 +6,7 @@ import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Literal
+from urllib.parse import urlparse
 
 if sys.version_info >= (3, 11):
     import tomllib
@@ -88,6 +89,16 @@ def _validate_non_empty_str(name: str, value: Any) -> str:
     return value.strip()
 
 
+def _validate_http_url(name: str, value: Any) -> str:
+    url = _validate_non_empty_str(name, value)
+    parsed = urlparse(url)
+    if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+        raise ConfigError(
+            f"Configuration '{name}' must be a valid http:// or https:// URL (got '{url}')."
+        )
+    return url
+
+
 def find_config_file(start_dir: Path | None = None) -> Path | None:
     """Locate `.diffwise.toml` starting at `start_dir` and walking up parent directories."""
     current = (start_dir or Path.cwd()).resolve()
@@ -129,9 +140,9 @@ def load_config(
     if "backend" in section:
         cfg.backend = _validate_backend(section["backend"])
     if "ollama_url" in section:
-        cfg.ollama_url = _validate_non_empty_str("ollama_url", section["ollama_url"])
+        cfg.ollama_url = _validate_http_url("ollama_url", section["ollama_url"])
     if "llamacpp_url" in section:
-        cfg.llamacpp_url = _validate_non_empty_str("llamacpp_url", section["llamacpp_url"])
+        cfg.llamacpp_url = _validate_http_url("llamacpp_url", section["llamacpp_url"])
     if "timeout_seconds" in section:
         cfg.timeout_seconds = _validate_positive_float(
             "timeout_seconds", section["timeout_seconds"]

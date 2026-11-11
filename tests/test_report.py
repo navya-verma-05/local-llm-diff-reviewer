@@ -16,6 +16,7 @@ from diffwise.report import (
     format_json_report,
     format_markdown_report,
     normalize_findings,
+    print_empty_diff_message,
     render_terminal_report,
     should_fail,
 )
@@ -162,5 +163,52 @@ def test_emit_report_writes_terminal_and_markdown_files(tmp_path: Path) -> None:
     md_text = md_out.read_text(encoding="utf-8")
     assert "## Plain-Text Fallback Notes" in md_text
     assert "Extra note" in md_text
+
+
+def test_terminal_report_escapes_rich_markup_brackets() -> None:
+    fdiff = FileDiff(
+        path="app/users/[id]/page.tsx",
+        language="tsx",
+        status="added",
+        hunks=[
+            DiffHunk(
+                old_start=0,
+                old_count=0,
+                new_start=1,
+                new_count=1,
+                header="@@ -0,0 +1,1 @@",
+                lines=[DiffLine("add", "export const x = 1;", None, 1)],
+            )
+        ],
+    )
+    report = ReviewReport(
+        collection=DiffCollection(target="feature/[tag]", files=[fdiff], skipped=[]),
+        backend="ollama",
+        model="qwen[local]",
+        chunk_count=1,
+        findings=[
+            Finding(
+                file="app/users/[id]/page.tsx",
+                line=1,
+                severity="style",
+                title="Bracket [title]",
+                explanation="Check [brackets] rendering.",
+                suggested_fix="Keep [id] intact.",
+            )
+        ],
+        fallback_notes=[FallbackNote(file="app/users/[id]/page.tsx", text="raw note")],
+        fail_on="none",
+    )
+    buf = StringIO()
+    console = Console(file=buf, no_color=True, width=120)
+    render_terminal_report(report, console)
+    out = buf.getvalue()
+    assert "app/users/[id]/page.tsx" in out
+    assert "feature/[tag]" in out
+    assert "qwen[local]" in out
+
+    empty_buf = StringIO()
+    print_empty_diff_message(Console(file=empty_buf, no_color=True, width=120), "feature/[tag]")
+    assert "feature/[tag]" in empty_buf.getvalue()
 
 

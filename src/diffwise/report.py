@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any, Literal
 
 from rich.console import Console, Group, RenderableType
+from rich.markup import escape
 from rich.panel import Panel
 from rich.rule import Rule
 from rich.syntax import Syntax
@@ -188,8 +189,11 @@ def render_terminal_report(report: ReviewReport, console: Console) -> None:
     )
     skipped_count = len(report.collection.skipped)
     header_lines = [
-        f"[bold]Target:[/bold] {target_desc}",
-        f"[bold]Backend:[/bold] {report.backend}  [bold]Model:[/bold] {report.model}",
+        f"[bold]Target:[/bold] {escape(target_desc)}",
+        (
+            f"[bold]Backend:[/bold] {escape(report.backend)}  "
+            f"[bold]Model:[/bold] {escape(report.model)}"
+        ),
         (
             f"[bold]Scope:[/bold] {len(report.collection.files)} file(s) reviewed, "
             f"{report.chunk_count} chunk(s), {skipped_count} skipped"
@@ -213,7 +217,10 @@ def render_terminal_report(report: ReviewReport, console: Console) -> None:
     else:
         for file_path, file_diff, file_findings in _group_findings_by_file(report):
             language = file_diff.language if file_diff is not None else "text"
-            rule_title = f"[bold]{file_path}[/bold] ({language}, {len(file_findings)} finding(s))"
+            rule_title = (
+                f"[bold]{escape(file_path)}[/bold] ({escape(language)}, "
+                f"{len(file_findings)} finding(s))"
+            )
             console.print(Rule(rule_title))
             for finding in file_findings:
                 label, badge_style = _SEVERITY_STYLES[finding.severity]
@@ -266,7 +273,7 @@ def render_terminal_report(report: ReviewReport, console: Console) -> None:
             console.print(
                 Panel(
                     Text(note.text),
-                    title=f"[yellow]Plain-Text Fallback: {note.file}[/yellow]",
+                    title=f"[yellow]Plain-Text Fallback: {escape(note.file)}[/yellow]",
                     border_style="yellow",
                 )
             )
@@ -408,6 +415,13 @@ def format_json_report(report: ReviewReport) -> str:
     return json.dumps(payload, indent=2) + "\n"
 
 
+def _write_output_file(output_path: Path, content: str, stderr_console: Console) -> None:
+    """Write rendered report content to a file and announce it on stderr."""
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(content, encoding="utf-8", newline="\n")
+    stderr_console.print(f"[green]Report written to {escape(str(output_path))}[/green]")
+
+
 def emit_report(
     report: ReviewReport,
     *,
@@ -420,9 +434,7 @@ def emit_report(
     if output_format == "json":
         rendered = format_json_report(report)
         if output_path is not None:
-            output_path.parent.mkdir(parents=True, exist_ok=True)
-            output_path.write_text(rendered, encoding="utf-8", newline="\n")
-            stderr_console.print(f"[green]Report written to {output_path}[/green]")
+            _write_output_file(output_path, rendered, stderr_console)
         else:
             stdout_console.file.write(rendered)
             stdout_console.file.flush()
@@ -431,9 +443,7 @@ def emit_report(
     if output_format == "markdown":
         rendered = format_markdown_report(report)
         if output_path is not None:
-            output_path.parent.mkdir(parents=True, exist_ok=True)
-            output_path.write_text(rendered, encoding="utf-8", newline="\n")
-            stderr_console.print(f"[green]Report written to {output_path}[/green]")
+            _write_output_file(output_path, rendered, stderr_console)
         else:
             stdout_console.file.write(rendered)
             stdout_console.file.flush()
@@ -442,9 +452,7 @@ def emit_report(
     if output_path is not None:
         capture_console = Console(record=True, no_color=True, width=100)
         render_terminal_report(report, capture_console)
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-        output_path.write_text(capture_console.export_text(), encoding="utf-8", newline="\n")
-        stderr_console.print(f"[green]Report written to {output_path}[/green]")
+        _write_output_file(output_path, capture_console.export_text(), stderr_console)
     else:
         render_terminal_report(report, stdout_console)
 
@@ -458,5 +466,8 @@ def print_empty_diff_message(console: Console, target: str = "staged") -> None:
             "and run [cyan]diffwise[/cyan] again."
         )
     else:
-        message = f"[bold green]Nothing to review.[/bold green]\nNo changes found for '{target}'."
+        message = (
+            "[bold green]Nothing to review.[/bold green]\n"
+            f"No changes found for '{escape(target)}'."
+        )
     console.print(Panel(message, title="diffwise", border_style="green"))

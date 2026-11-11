@@ -353,3 +353,27 @@ def test_quoted_paths_copy_binary_patch_and_commit_ranges(git_repo: Repo) -> Non
         get_commit_diff("a..b..c", repo_root)
 
 
+def test_unquote_git_path_flushes_utf8_bytes_before_escape_and_validates_urls(
+    tmp_path: Path,
+) -> None:
+    raw = (
+        'diff --git "a/caf\\303\\251\\z.py" "b/caf\\303\\251\\z.py"\n'
+        "--- \"a/caf\\303\\251\\z.py\"\n"
+        "+++ \"b/caf\\303\\251\\z.py\"\n"
+        "@@ -0,0 +1 @@\n"
+        "+ok = True\n"
+    )
+    parsed = parse_unified_diff(raw)
+    assert len(parsed) == 1
+    assert parsed[0].path == "caféz.py"
+
+    cfg_file = tmp_path / ".diffwise.toml"
+    cfg_file.write_text('ollama_url = "ftp://localhost:11434"\n', encoding="utf-8")
+    with pytest.raises(ConfigError, match="http:// or https://"):
+        load_config(start_dir=tmp_path)
+
+    cfg_file.write_text('llamacpp_url = "not-a-url"\n', encoding="utf-8")
+    with pytest.raises(ConfigError, match="http:// or https://"):
+        load_config(start_dir=tmp_path)
+
+

@@ -396,6 +396,9 @@ def _unquote_git_path(token: str) -> str:
                 raw_bytes.append(int(inner[i : i + 3], 8))
                 i += 3
             else:
+                if raw_bytes:
+                    result.append(raw_bytes.decode("utf-8", errors="replace"))
+                    raw_bytes.clear()
                 result.append(esc)
                 i += 1
         if raw_bytes:

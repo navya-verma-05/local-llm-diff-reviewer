@@ -9,6 +9,16 @@ class BackendError(RuntimeError):
     """Raised when an LLM backend is unreachable, unhealthy, or fails to respond."""
 
 
+def format_http_error_detail(raw_body: bytes, *, max_chars: int = 500) -> str:
+    """Decode and bound an HTTP error payload so huge responses do not flood output."""
+    text = raw_body.decode("utf-8", errors="replace").strip()
+    if not text:
+        return ""
+    if len(text) > max_chars:
+        text = text[:max_chars].rstrip() + "..."
+    return f": {text}"
+
+
 class LLMBackend(ABC):
     """Contract for local LLM inference backends."""
 
