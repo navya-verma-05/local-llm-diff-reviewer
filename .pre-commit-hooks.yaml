@@ -1,0 +1,10 @@
+- id: diffwise
+  name: diffwise local LLM code review
+  description: Review staged git diffs locally before commit using Ollama or llama.cpp
+  entry: diffwise
+  language: python
+  pass_filenames: false
+  always_run: true
+  stages: [pre-commit]
+  args: [--staged, --fail-on, bug]
+

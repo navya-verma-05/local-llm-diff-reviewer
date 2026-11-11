@@ -151,3 +151,47 @@ def load_config(
 
     return cfg
 
+
+def render_starter_config() -> str:
+    """Return a documented starter `.diffwise.toml` configuration file."""
+    return (
+        "# diffwise configuration\n"
+        "# CLI flags always override settings in this file.\n\n"
+        f'model = "{DEFAULT_MODEL}"\n'
+        f'backend = "{DEFAULT_BACKEND}"\n\n'
+        f'ollama_url = "{DEFAULT_OLLAMA_URL}"\n'
+        f'llamacpp_url = "{DEFAULT_LLAMACPP_URL}"\n'
+        f"timeout_seconds = {DEFAULT_TIMEOUT_SECONDS}\n\n"
+        f"max_file_size_bytes = {DEFAULT_MAX_FILE_SIZE_BYTES}\n"
+        f"max_chunk_chars = {DEFAULT_MAX_CHUNK_CHARS}\n\n"
+        '# Block commits when findings reach threshold: "bug", "security", or "none"\n'
+        'fail_on = "bug"\n\n'
+        "# Glob patterns to skip during review\n"
+        "ignore_globs = [\n"
+        '  "dist/**",\n'
+        '  "build/**",\n'
+        '  "*.snap",\n'
+        '  "*.generated.*",\n'
+        "]\n\n"
+        "# Custom review rules appended to the system prompt\n"
+        "rules = [\n"
+        '  "Flag hardcoded credentials, API keys, or secrets.",\n'
+        '  "Ensure SQL queries use parameterized bindings instead of string interpolation.",\n'
+        '  "Check error handling around external I/O, network requests, and subprocess calls.",\n'
+        "]\n"
+    )
+
+
+def write_starter_config(target_dir: Path | None = None, *, force: bool = False) -> Path:
+    """Write a starter `.diffwise.toml` in `target_dir` and return its path."""
+    base_dir = (target_dir or Path.cwd()).resolve()
+    dest = base_dir / DEFAULT_CONFIG_FILENAME
+    if dest.exists() and not force:
+        raise ConfigError(
+            f"{dest} already exists. Pass --force to overwrite the existing configuration."
+        )
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    dest.write_text(render_starter_config(), encoding="utf-8", newline="\n")
+    return dest
+
+
